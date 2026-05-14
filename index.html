@@ -84,13 +84,10 @@ button {
 <body>
 
 <div class="map-wrapper">
-
   <div id="map">
     <img id="image" src="F2B6F513-44D5-44E1-BCA8-213EAD90E9FA.png">
-
     <div id="dots-layer"></div>
   </div>
-
 </div>
 
 <div id="previewCard" class="preview-card"></div>
@@ -103,43 +100,42 @@ button {
 
 <div id="overlay"></div>
 
-<!-- 🔥 FIREBASE (MECBUR) -->
+<!-- FIREBASE -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import {
-    getFirestore,
-    collection,
-    getDocs,
-    addDoc,
-    deleteDoc,
-    doc,
-    updateDoc
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  addDoc,
+  deleteDoc,
+  doc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyA39dlDtTwi74P0PzBU8cWCdNET1w_r9qA",
-    authDomain: "harita-app-3590b.firebaseapp.com",
-    projectId: "harita-app-3590b",
-    storageBucket: "harita-app-3590b.appspot.com",
-    messagingSenderId: "676131245201",
-    appId: "1:676131245201:web:ec741e60f2ad32a1a34330"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyA39dlDtTwi74P0kPzBU8cWCdNET1w_r9qA",
+  authDomain: "harita-app-3590b.firebaseapp.com",
+  projectId: "harita-app-3590b",
+  storageBucket: "harita-app-3590b.appspot.com",
+  messagingSenderId: "676131245201",
+  appId: "1:676131245201:web:ec741e60f2ad32a1a34330"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  window.db = db;
-  window.fb = {
-    collection,
-    getDocs,
-    addDoc,
-    deleteDoc,
-    doc,
-    updateDoc
-  };
+window.db = db;
+window.fb = {
+  collection,
+  getDocs,
+  addDoc,
+  deleteDoc,
+  doc,
+  updateDoc
+};
 </script>
 
-<!-- 🔥 SENİN SCRIPT -->
 <script src="script.js"></script>
 
 </body>
