@@ -14,6 +14,10 @@ const previewCard = document.getElementById("previewCard");
 
 let activeDotId = null;
 
+/* ================= FIREBASE ================= */
+const db = window.db;
+const fb = window.fb;
+
 /* ================= CAMERA ================= */
 let camera = { x: 0, y: 0, scale: 1 };
 
@@ -23,17 +27,24 @@ function applyCamera() {
 }
 
 /* ================= DATA ================= */
-let dots = JSON.parse(localStorage.getItem("dots")) || [];
+let dots = [];
 
-renderAllDots();
+/* ================= LOAD FROM FIREBASE ================= */
+async function loadDots() {
+  const snap = await fb.getDocs(fb.collection(db, "dots"));
 
-/* ================= SAVE ================= */
-function save() {
-  localStorage.setItem("dots", JSON.stringify(dots));
+  dots = snap.docs.map(d => ({
+    id: d.id,
+    ...d.data()
+  }));
+
+  renderAllDots();
 }
 
+loadDots();
+
 /* ================= ADD DOT ================= */
-image.addEventListener("click", (e) => {
+image.addEventListener("click", async (e) => {
   if (e.target !== image) return;
 
   const rect = image.getBoundingClientRect();
@@ -44,16 +55,14 @@ image.addEventListener("click", (e) => {
   const text = prompt("Nokta adı:");
   if (!text) return;
 
-  dots.push({
-    id: Date.now(),
+  await fb.addDoc(fb.collection(db, "dots"), {
     x,
     y,
     text,
     note: ""
   });
 
-  save();
-  renderAllDots();
+  loadDots();
 });
 
 /* ================= RENDER ================= */
@@ -71,27 +80,25 @@ function renderAllDots() {
     el.style.left = (dot.x * rect.width) + "px";
     el.style.top = (dot.y * rect.height) + "px";
 
-    /* ================= CLICK ================= */
+    /* CLICK */
     el.addEventListener("click", (e) => {
       e.stopPropagation();
       showPopup(dot);
     });
 
-    /* ================= RIGHT CLICK DELETE ================= */
-    el.addEventListener("contextmenu", (e) => {
+    /* DELETE */
+    el.addEventListener("contextmenu", async (e) => {
       e.preventDefault();
-      e.stopPropagation();
 
-      dots = dots.filter(d => d.id !== dot.id);
-      save();
-      renderAllDots();
+      await fb.deleteDoc(fb.doc(db, "dots", dot.id));
+      loadDots();
     });
 
-    /* ================= HOVER PREVIEW (FIXED) ================= */
+    /* PREVIEW */
     el.addEventListener("mouseenter", () => {
       previewCard.style.display = "block";
 
-      const fresh = dots.find(d => d.id === Number(el.dataset.id));
+      const fresh = dots.find(d => d.id === dot.id);
 
       const firstLine = (fresh.note || "").split("\n")[0].trim();
 
@@ -129,14 +136,12 @@ function showPopup(dot) {
 }
 
 /* ================= SAVE NOTE ================= */
-saveBtn.onclick = () => {
-  const dot = dots.find(d => d.id === activeDotId);
-  if (!dot) return;
+saveBtn.onclick = async () => {
+  await fb.updateDoc(fb.doc(db, "dots", activeDotId), {
+    note: noteInput.value
+  });
 
-  dot.note = noteInput.value;
-  save();
-
-  renderAllDots(); // preview sync
+  loadDots();
 };
 
 /* ================= CLOSE ================= */
