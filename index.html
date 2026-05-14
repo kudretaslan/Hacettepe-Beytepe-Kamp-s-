@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Harita</title>
 
 <style>
@@ -27,6 +27,7 @@ body {
 #dots-layer {
   position: absolute;
   inset: 0;
+  pointer-events: none;
 }
 
 .dot {
@@ -34,27 +35,33 @@ body {
   transform: translate(-50%, -50%);
   font-size: 20px;
   cursor: pointer;
+  pointer-events: auto;
 }
-.preview-card {
-  position: fixed;
-  display: none;
-  background: rgba(0,0,0,0.6);
-  color: white;
-  padding: 8px;
-  border-radius: 8px;
-  font-size: 12px;
-}
+
 .box {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%,-50%);
   background: white;
-  padding: 15px;
+  padding: 10px;
   display: none;
-  border-radius: 10px;
 }
-textarea { width: 250px; height: 120px; }
+
+textarea {
+  width: 220px;
+  height: 120px;
+}
+
+.preview {
+  position: fixed;
+  display: none;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  padding: 6px;
+  border-radius: 8px;
+  font-size: 12px;
+}
 </style>
 </head>
 
@@ -65,7 +72,7 @@ textarea { width: 250px; height: 120px; }
   <div id="dots-layer"></div>
 </div>
 
-<div class="preview-card" id="preview"></div>
+<div class="preview" id="preview"></div>
 
 <div class="box" id="box">
   <textarea id="note"></textarea>
@@ -73,36 +80,6 @@ textarea { width: 250px; height: 120px; }
   <button id="close">Kapat</button>
 </div>
 
-<!-- 🔥 FIREBASE -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  updateDoc,
-  deleteDoc,
-  doc
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_BUCKET",
-  messagingSenderId: "YOUR_ID",
-  appId: "YOUR_APP_ID"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-window.db = db;
-window.fb = { collection, addDoc, getDocs, updateDoc, deleteDoc, doc };
-</script>
-
 <script src="script.js"></script>
-
 </body>
 </html>
