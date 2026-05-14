@@ -78,7 +78,6 @@ button {
   pointer-events: none;
 }
 </style>
-
 </head>
 
 <body>
@@ -106,8 +105,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import {
   getFirestore,
   collection,
-  getDocs,
   addDoc,
+  getDocs,
   deleteDoc,
   doc,
   updateDoc
@@ -128,8 +127,8 @@ const db = getFirestore(app);
 window.db = db;
 window.fb = {
   collection,
-  getDocs,
   addDoc,
+  getDocs,
   deleteDoc,
   doc,
   updateDoc
