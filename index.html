@@ -8,78 +8,33 @@
 <link rel="stylesheet" href="style.css">
 
 <style>
-/* 🔥 SAFETY BASE FIX */
 body {
   margin: 0;
   overflow: hidden;
   font-family: Arial, sans-serif;
 }
 
-/* 🔍 SEARCH */
-#search {
-  position: fixed;
-  top: 15px;
-  left: 15px;
-
-  z-index: 100000;
-
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: none;
-
-  outline: none;
-  width: 220px;
-}
-
-/* 🧾 TOOLTIP */
-#tooltip {
-  position: fixed;
-  display: none;
-
-  z-index: 999999;
-  pointer-events: none;
-
-  padding: 6px 10px;
-  border-radius: 8px;
-
-  font-size: 13px;
-  color: white;
-
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(10px);
-}
-
-/* 🌫 OVERLAY */
 #overlay {
   position: fixed;
   inset: 0;
-
   background: rgba(0,0,0,0.5);
   backdrop-filter: blur(6px);
-
   display: none;
   z-index: 9998;
 }
 
-/* 🧠 MODAL */
 .box {
   position: fixed;
   top: 50%;
   left: 50%;
-
   transform: translate(-50%, -50%) scale(0.9);
   opacity: 0;
-
   width: 420px;
   min-height: 320px;
-
   background: #fff;
   border-radius: 18px;
-
   padding: 20px;
-
   z-index: 9999;
-
   transition: 0.25s ease;
   visibility: hidden;
 }
@@ -93,9 +48,9 @@ body {
 textarea {
   width: 100%;
   height: 220px;
-  resize: none;
   border: none;
   outline: none;
+  resize: none;
 }
 
 button {
@@ -107,48 +62,84 @@ button {
   color: white;
   cursor: pointer;
 }
+
+.preview-card {
+  position: fixed;
+  display: none;
+  min-width: 180px;
+  max-width: 240px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: white;
+  font-size: 13px;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(10px);
+  z-index: 99999;
+  pointer-events: none;
+}
 </style>
 
 </head>
 
 <body>
 
-
-<!-- 🗺 MAP WRAPPER -->
 <div class="map-wrapper">
 
-  <!-- MAP ROOT -->
   <div id="map">
+    <img id="image" src="F2B6F513-44D5-44E1-BCA8-213EAD90E9FA.png">
 
-    <!-- 🖼 MAP IMAGE -->
-    <img id="image" src="F2B6F513-44D5-44E1-BCA8-213EAD90E9FA.png" alt="map">
-
-    <!-- 📍 DOT LAYER -->
     <div id="dots-layer"></div>
-
-    <!-- 🌫 EFFECT LAYERS -->
-    <div class="noise"></div>
-    <div class="vignette"></div>
-
   </div>
+
 </div>
 
-<!-- 🧾 TOOLTIP -->
-<div id="tooltip"></div> <div id="previewCard" class="preview-card"></div>
+<div id="previewCard" class="preview-card"></div>
 
-<!-- 🧠 MODAL -->
 <div id="box" class="box">
-
-  <textarea id="noteInput" placeholder="Not yaz..."></textarea>
-
+  <textarea id="noteInput"></textarea>
   <button id="saveBtn">Kaydet</button>
   <button id="closeBtn">Kapat</button>
-
 </div>
 
-<!-- 🌫 OVERLAY -->
 <div id="overlay"></div>
 
+<!-- 🔥 FIREBASE (MECBUR) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    addDoc,
+    deleteDoc,
+    doc,
+    updateDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA39dlDtTwi74P0PzBU8cWCdNET1w_r9qA",
+    authDomain: "harita-app-3590b.firebaseapp.com",
+    projectId: "harita-app-3590b",
+    storageBucket: "harita-app-3590b.appspot.com",
+    messagingSenderId: "676131245201",
+    appId: "1:676131245201:web:ec741e60f2ad32a1a34330"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.db = db;
+  window.fb = {
+    collection,
+    getDocs,
+    addDoc,
+    deleteDoc,
+    doc,
+    updateDoc
+  };
+</script>
+
+<!-- 🔥 SENİN SCRIPT -->
 <script src="script.js"></script>
 
 </body>
