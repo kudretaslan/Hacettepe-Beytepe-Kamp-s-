@@ -1,28 +1,3 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  addDoc,
-  deleteDoc,
-  doc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-/* ================= FIREBASE ================= */
-const firebaseConfig = {
-  apiKey: "XXX",
-  authDomain: "XXX",
-  projectId: "XXX",
-  storageBucket: "XXX",
-  messagingSenderId: "XXX",
-  appId: "XXX"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-/* ================= DOM ================= */
 const image = document.getElementById("image");
 const map = document.getElementById("map");
 const dotsLayer = document.getElementById("dots-layer");
@@ -34,6 +9,7 @@ const saveBtn = document.getElementById("saveBtn");
 const closeBtn = document.getElementById("closeBtn");
 
 const overlay = document.getElementById("overlay");
+
 const previewCard = document.getElementById("previewCard");
 
 let activeDotId = null;
@@ -49,17 +25,30 @@ function applyCamera() {
 /* ================= DATA ================= */
 let dots = [];
 
-/* ================= LOAD FROM FIREBASE ================= */
 async function loadDots() {
-  const snap = await getDocs(collection(db, "dots"));
-  dots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  try {
+    const res = await fetch("dots.json", { cache: "no-cache" });
+    if (!res.ok) throw new Error("dots.json yüklenemedi");
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : [];
+    dots = list.map((d) => ({
+      ...d,
+      id: Number(d.id),
+      x: Number(d.x),
+      y: Number(d.y),
+      text: String(d.text ?? ""),
+      note: String(d.note ?? "")
+    }));
+  } catch {
+    dots = [];
+  }
   renderAllDots();
 }
 
 loadDots();
 
 /* ================= ADD DOT ================= */
-image.addEventListener("click", async (e) => {
+image.addEventListener("click", (e) => {
   if (e.target !== image) return;
 
   const rect = image.getBoundingClientRect();
@@ -70,14 +59,15 @@ image.addEventListener("click", async (e) => {
   const text = prompt("Nokta adı:");
   if (!text) return;
 
-  await addDoc(collection(db, "dots"), {
+  dots.push({
+    id: Date.now(),
     x,
     y,
     text,
     note: ""
   });
 
-  loadDots();
+  renderAllDots();
 });
 
 /* ================= RENDER ================= */
@@ -89,20 +79,50 @@ function renderAllDots() {
   dots.forEach(dot => {
     const el = document.createElement("div");
     el.className = "dot";
+    el.dataset.id = dot.id;
     el.innerText = "📍";
 
     el.style.left = (dot.x * rect.width) + "px";
     el.style.top = (dot.y * rect.height) + "px";
 
+    /* ================= CLICK ================= */
     el.addEventListener("click", (e) => {
       e.stopPropagation();
       showPopup(dot);
     });
 
-    el.addEventListener("contextmenu", async (e) => {
+    /* ================= RIGHT CLICK DELETE ================= */
+    el.addEventListener("contextmenu", (e) => {
       e.preventDefault();
-      await deleteDoc(doc(db, "dots", dot.id));
-      loadDots();
+      e.stopPropagation();
+
+      dots = dots.filter((d) => d.id !== dot.id);
+      renderAllDots();
+    });
+
+    /* ================= HOVER PREVIEW (FIXED) ================= */
+    el.addEventListener("mouseenter", () => {
+      previewCard.style.display = "block";
+
+      const fresh = dots.find(d => d.id === Number(el.dataset.id));
+
+      const firstLine = (fresh.note || "").split("\n")[0].trim();
+
+      previewCard.innerHTML = `
+        <b>${fresh.text}</b>
+        <div style="opacity:.7;margin-top:4px">
+          ${firstLine ? firstLine.slice(0, 40) : "Not yok"}
+        </div>
+      `;
+    });
+
+    el.addEventListener("mousemove", (e) => {
+      previewCard.style.left = e.clientX + 15 + "px";
+      previewCard.style.top = e.clientY + 15 + "px";
+    });
+
+    el.addEventListener("mouseleave", () => {
+      previewCard.style.display = "none";
     });
 
     dotsLayer.appendChild(el);
@@ -115,20 +135,20 @@ function showPopup(dot) {
 
   box.style.display = "block";
   overlay.style.display = "block";
+
   setTimeout(() => box.classList.add("show"), 10);
 
   noteInput.value = dot.note || "";
 }
 
 /* ================= SAVE NOTE ================= */
-saveBtn.onclick = async () => {
-  const ref = doc(db, "dots", activeDotId);
+saveBtn.onclick = () => {
+  const dot = dots.find(d => d.id === activeDotId);
+  if (!dot) return;
 
-  await updateDoc(ref, {
-    note: noteInput.value
-  });
+  dot.note = noteInput.value;
 
-  loadDots();
+  renderAllDots();
 };
 
 /* ================= CLOSE ================= */
@@ -143,6 +163,27 @@ function closeBox() {
 
 closeBtn.onclick = closeBox;
 overlay.addEventListener("click", closeBox);
+
+/* ================= ZOOM ================= */
+function focusDot(dot) {
+  const rect = image.getBoundingClientRect();
+
+  const x = dot.x * rect.width;
+  const y = dot.y * rect.height;
+
+  camera.scale = 2.5;
+
+  camera.x = (rect.width / 2) - x * camera.scale;
+  camera.y = (rect.height / 2) - y * camera.scale;
+
+  applyCamera();
+}
+
+/* ================= RESET ================= */
+function resetView() {
+  camera = { x: 0, y: 0, scale: 1 };
+  applyCamera();
+}
 
 /* ================= RESIZE ================= */
 window.addEventListener("resize", renderAllDots);
