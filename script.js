@@ -9,35 +9,20 @@ const saveBtn = document.getElementById("saveBtn");
 const closeBtn = document.getElementById("closeBtn");
 
 const overlay = document.getElementById("overlay");
-
 const previewCard = document.getElementById("previewCard");
 
 let activeDotId = null;
 
-/* ================= FIREBASE ================= */
-const db = window.db;
-const fb = window.fb;
+/* ================= FIREBASE SHORTCUT ================= */
+const db = window.firebaseDB;
+const { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } = window.firebaseLib;
 
-/* ================= CAMERA ================= */
-let camera = { x: 0, y: 0, scale: 1 };
-
-function applyCamera() {
-  map.style.transform =
-    `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`;
-}
-
-/* ================= DATA ================= */
+/* ================= LOAD DOTS ================= */
 let dots = [];
 
-/* ================= LOAD FROM FIREBASE ================= */
 async function loadDots() {
-  const snap = await fb.getDocs(fb.collection(db, "dots"));
-
-  dots = snap.docs.map(d => ({
-    id: d.id,
-    ...d.data()
-  }));
-
+  const snap = await getDocs(collection(db, "dots"));
+  dots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   renderAllDots();
 }
 
@@ -55,7 +40,7 @@ image.addEventListener("click", async (e) => {
   const text = prompt("Nokta adı:");
   if (!text) return;
 
-  await fb.addDoc(fb.collection(db, "dots"), {
+  await addDoc(collection(db, "dots"), {
     x,
     y,
     text,
@@ -74,50 +59,38 @@ function renderAllDots() {
   dots.forEach(dot => {
     const el = document.createElement("div");
     el.className = "dot";
-    el.dataset.id = dot.id;
     el.innerText = "📍";
 
     el.style.left = (dot.x * rect.width) + "px";
     el.style.top = (dot.y * rect.height) + "px";
 
-    /* CLICK */
-    el.addEventListener("click", (e) => {
-      e.stopPropagation();
-      showPopup(dot);
-    });
+    /* OPEN */
+    el.onclick = () => showPopup(dot);
 
     /* DELETE */
-    el.addEventListener("contextmenu", async (e) => {
+    el.oncontextmenu = async (e) => {
       e.preventDefault();
-
-      await fb.deleteDoc(fb.doc(db, "dots", dot.id));
+      await deleteDoc(doc(db, "dots", dot.id));
       loadDots();
-    });
+    };
 
-    /* PREVIEW */
-    el.addEventListener("mouseenter", () => {
+    /* HOVER */
+    el.onmouseenter = () => {
       previewCard.style.display = "block";
-
-      const fresh = dots.find(d => d.id === dot.id);
-
-      const firstLine = (fresh.note || "").split("\n")[0].trim();
-
       previewCard.innerHTML = `
-        <b>${fresh.text}</b>
-        <div style="opacity:.7;margin-top:4px">
-          ${firstLine ? firstLine.slice(0, 40) : "Not yok"}
-        </div>
+        <b>${dot.text}</b>
+        <div>${dot.note || "Not yok"}</div>
       `;
-    });
+    };
 
-    el.addEventListener("mousemove", (e) => {
-      previewCard.style.left = e.clientX + 15 + "px";
-      previewCard.style.top = e.clientY + 15 + "px";
-    });
+    el.onmousemove = (e) => {
+      previewCard.style.left = e.clientX + 10 + "px";
+      previewCard.style.top = e.clientY + 10 + "px";
+    };
 
-    el.addEventListener("mouseleave", () => {
+    el.onmouseleave = () => {
       previewCard.style.display = "none";
-    });
+    };
 
     dotsLayer.appendChild(el);
   });
@@ -129,7 +102,6 @@ function showPopup(dot) {
 
   box.style.display = "block";
   overlay.style.display = "block";
-
   setTimeout(() => box.classList.add("show"), 10);
 
   noteInput.value = dot.note || "";
@@ -137,17 +109,19 @@ function showPopup(dot) {
 
 /* ================= SAVE NOTE ================= */
 saveBtn.onclick = async () => {
-  await fb.updateDoc(fb.doc(db, "dots", activeDotId), {
+  const ref = doc(db, "dots", activeDotId);
+
+  await updateDoc(ref, {
     note: noteInput.value
   });
 
+  closeBox();
   loadDots();
 };
 
 /* ================= CLOSE ================= */
 function closeBox() {
   box.classList.remove("show");
-
   setTimeout(() => {
     box.style.display = "none";
     overlay.style.display = "none";
@@ -155,28 +129,7 @@ function closeBox() {
 }
 
 closeBtn.onclick = closeBox;
-overlay.addEventListener("click", closeBox);
-
-/* ================= ZOOM ================= */
-function focusDot(dot) {
-  const rect = image.getBoundingClientRect();
-
-  const x = dot.x * rect.width;
-  const y = dot.y * rect.height;
-
-  camera.scale = 2.5;
-
-  camera.x = (rect.width / 2) - x * camera.scale;
-  camera.y = (rect.height / 2) - y * camera.scale;
-
-  applyCamera();
-}
-
-/* ================= RESET ================= */
-function resetView() {
-  camera = { x: 0, y: 0, scale: 1 };
-  applyCamera();
-}
+overlay.onclick = closeBox;
 
 /* ================= RESIZE ================= */
 window.addEventListener("resize", renderAllDots);
