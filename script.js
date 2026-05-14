@@ -1,31 +1,44 @@
-window.addEventListener("load", () => {
-
 const image = document.getElementById("image");
+const map = document.getElementById("map");
 const dotsLayer = document.getElementById("dots-layer");
+
 const box = document.getElementById("box");
-const note = document.getElementById("note");
-const saveBtn = document.getElementById("save");
-const closeBtn = document.getElementById("close");
-const preview = document.getElementById("preview");
+const noteInput = document.getElementById("noteInput");
 
+const saveBtn = document.getElementById("saveBtn");
+const closeBtn = document.getElementById("closeBtn");
+
+const overlay = document.getElementById("overlay");
+
+const previewCard = document.getElementById("previewCard");
+
+let activeDotId = null;
+
+/* ================= CAMERA ================= */
+let camera = { x: 0, y: 0, scale: 1 };
+
+function applyCamera() {
+  map.style.transform =
+    `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`;
+}
+
+/* ================= FIREBASE DATA ================= */
 let dots = [];
-let active = null;
 
-/* ================= LOAD (LOCAL MODE) ================= */
-function load() {
-  const data = localStorage.getItem("dots");
-  dots = data ? JSON.parse(data) : [];
-  render();
-}
-load();
+const col = () => window.fb.collection(window.db, "dots");
 
-/* ================= SAVE ================= */
-function save() {
-  localStorage.setItem("dots", JSON.stringify(dots));
+/* ================= LOAD FROM FIREBASE ================= */
+async function loadDots() {
+  const snap = await window.fb.getDocs(col());
+  dots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderAllDots();
 }
+
+loadDots();
 
 /* ================= ADD DOT ================= */
-image.addEventListener("click", (e) => {
+image.addEventListener("click", async (e) => {
+  if (e.target !== image) return;
 
   const rect = image.getBoundingClientRect();
 
@@ -35,81 +48,138 @@ image.addEventListener("click", (e) => {
   const text = prompt("Nokta adı:");
   if (!text) return;
 
-  dots.push({
-    id: Date.now(),
+  await window.fb.addDoc(col(), {
     x,
     y,
     text,
     note: ""
   });
 
-  save();
-  render();
+  loadDots();
 });
 
 /* ================= RENDER ================= */
-function render() {
+function renderAllDots() {
   dotsLayer.innerHTML = "";
 
   const rect = image.getBoundingClientRect();
 
-  dots.forEach(d => {
-
+  dots.forEach(dot => {
     const el = document.createElement("div");
     el.className = "dot";
+    el.dataset.id = dot.id;
     el.innerText = "📍";
 
-    el.style.left = d.x * rect.width + "px";
-    el.style.top = d.y * rect.height + "px";
+    el.style.left = (dot.x * rect.width) + "px";
+    el.style.top = (dot.y * rect.height) + "px";
 
-    /* OPEN */
-    el.onclick = () => {
-      active = d.id;
-      box.style.display = "block";
-      note.value = d.note || "";
-    };
+    /* CLICK */
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      showPopup(dot);
+    });
 
     /* DELETE */
-    el.oncontextmenu = (e) => {
+    el.addEventListener("contextmenu", async (e) => {
       e.preventDefault();
-      dots = dots.filter(x => x.id !== d.id);
-      save();
-      render();
-    };
+      e.stopPropagation();
+
+      await window.fb.deleteDoc(
+        window.fb.doc(window.db, "dots", dot.id)
+      );
+
+      loadDots();
+    });
 
     /* PREVIEW */
-    el.onmouseenter = () => {
-      preview.style.display = "block";
-      preview.innerHTML = `<b>${d.text}</b><br>${d.note || "not yok"}`;
-    };
+    el.addEventListener("mouseenter", () => {
+      previewCard.style.display = "block";
 
-    el.onmousemove = (e) => {
-      preview.style.left = e.pageX + 10 + "px";
-      preview.style.top = e.pageY + 10 + "px";
-    };
+      const fresh = dots.find(d => d.id === dot.id);
 
-    el.onmouseleave = () => {
-      preview.style.display = "none";
-    };
+      const firstLine = (fresh?.note || "").split("\n")[0].trim();
+
+      previewCard.innerHTML = `
+        <b>${fresh.text}</b>
+        <div style="opacity:.7;margin-top:4px">
+          ${firstLine ? firstLine.slice(0, 40) : "Not yok"}
+        </div>
+      `;
+    });
+
+    el.addEventListener("mousemove", (e) => {
+      previewCard.style.left = e.clientX + 15 + "px";
+      previewCard.style.top = e.clientY + 15 + "px";
+    });
+
+    el.addEventListener("mouseleave", () => {
+      previewCard.style.display = "none";
+    });
 
     dotsLayer.appendChild(el);
   });
 }
 
-/* ================= SAVE NOTE ================= */
-saveBtn.onclick = () => {
-  const d = dots.find(x => x.id === active);
-  if (!d) return;
+/* ================= POPUP ================= */
+function showPopup(dot) {
+  activeDotId = dot.id;
 
-  d.note = note.value;
-  save();
-  render();
-  box.style.display = "none";
+  box.style.display = "block";
+  overlay.style.display = "block";
+
+  setTimeout(() => box.classList.add("show"), 10);
+
+  noteInput.value = dot.note || "";
+}
+
+/* ================= SAVE NOTE ================= */
+saveBtn.onclick = async () => {
+  const dot = dots.find(d => d.id === activeDotId);
+  if (!dot) return;
+
+  await window.fb.updateDoc(
+    window.fb.doc(window.db, "dots", activeDotId),
+    {
+      note: noteInput.value
+    }
+  );
+
+  loadDots();
 };
 
 /* ================= CLOSE ================= */
-closeBtn.onclick = () => {
-  box.style.display = "none";
-};
+function closeBox() {
+  box.classList.remove("show");
 
-});
+  setTimeout(() => {
+    box.style.display = "none";
+    overlay.style.display = "none";
+  }, 200);
+}
+
+closeBtn.onclick = closeBox;
+overlay.addEventListener("click", closeBox);
+
+/* ================= ZOOM ================= */
+function focusDot(dot) {
+  const rect = image.getBoundingClientRect();
+
+  const x = dot.x * rect.width;
+  const y = dot.y * rect.height;
+
+  camera.scale = 2.5;
+
+  camera.x = (rect.width / 2) - x * camera.scale;
+  camera.y = (rect.height / 2) - y * camera.scale;
+
+  applyCamera();
+}
+
+/* ================= RESET ================= */
+function resetView() {
+  camera = { x: 0, y: 0, scale: 1 };
+  applyCamera();
+}
+
+/* ================= RESIZE ================= */
+window.addEventListener("resize", renderAllDots);
