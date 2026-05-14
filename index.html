@@ -3,83 +3,89 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Harita</title>
+<title>Akıllı Harita</title>
+
+<link rel="stylesheet" href="style.css">
 
 <style>
 body {
   margin: 0;
   overflow: hidden;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
 }
 
-#map {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-}
-
-#image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-#dots-layer {
-  position: absolute;
+#overlay {
+  position: fixed;
   inset: 0;
-  pointer-events: none;
-}
-
-.dot {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  font-size: 20px;
-  cursor: pointer;
-  pointer-events: auto;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  z-index: 9998;
 }
 
 .box {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%,-50%);
-  background: white;
-  padding: 10px;
-  display: none;
+  transform: translate(-50%, -50%) scale(0.9);
+  opacity: 0;
+  width: 420px;
+  min-height: 320px;
+  background: #fff;
+  border-radius: 18px;
+  padding: 20px;
+  z-index: 9999;
+  transition: 0.25s ease;
+  visibility: hidden;
+}
+
+.box.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  visibility: visible;
 }
 
 textarea {
-  width: 220px;
-  height: 120px;
+  width: 100%;
+  height: 220px;
+  resize: none;
+  border: none;
+  outline: none;
 }
 
-.preview {
-  position: fixed;
-  display: none;
-  background: rgba(0,0,0,0.6);
-  color: white;
-  padding: 6px;
+button {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: none;
   border-radius: 8px;
-  font-size: 12px;
+  background: #222;
+  color: white;
+  cursor: pointer;
 }
 </style>
+
 </head>
 
 <body>
 
-<div id="map">
-  <img id="image" src="F2B6F513-44D5-44E1-BCA8-213EAD90E9FA.png">
-  <div id="dots-layer"></div>
+<div class="map-wrapper">
+  <div id="map">
+    <img id="image" src="F2B6F513-44D5-44E1-BCA8-213EAD90E9FA.png">
+    <div id="dots-layer"></div>
+  </div>
 </div>
 
-<div class="preview" id="preview"></div>
+<div id="previewCard" class="preview-card"></div>
 
-<div class="box" id="box">
-  <textarea id="note"></textarea>
-  <button id="save">Kaydet</button>
-  <button id="close">Kapat</button>
+<div id="box" class="box">
+  <textarea id="noteInput"></textarea>
+  <button id="saveBtn">Kaydet</button>
+  <button id="closeBtn">Kapat</button>
 </div>
 
-<script src="script.js"></script>
+<div id="overlay"></div>
+
+<!-- 🔥 FIREBASE + SCRIPT -->
+<script type="module" src="script.js"></script>
+
 </body>
 </html>
