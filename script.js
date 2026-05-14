@@ -26,17 +26,19 @@ function applyCamera() {
 let dots = [];
 
 function dotsJsonUrl() {
-  const el = document.querySelector('script[src*="script.js"]');
-  if (el && el.src) {
-    return el.src.replace(/\/script\.js(\?.*)?$/i, "/dots.json");
+  for (let i = 0; i < document.scripts.length; i++) {
+    const s = document.scripts[i];
+    if (!s.src || !/\/script\.js(\?.*)?$/i.test(s.src)) continue;
+    return new URL("dots.json", s.src).href;
   }
-  const path = window.location.pathname;
-  const dir = path.endsWith("/") || !/\.[a-z0-9]+$/i.test(path.split("/").pop() || "")
-    ? path.endsWith("/")
-      ? path
-      : path + "/"
-    : path.replace(/\/[^/]+$/, "/");
-  return window.location.origin + dir + "dots.json";
+  const { origin, pathname } = window.location;
+  let dir = pathname;
+  if (!dir.endsWith("/")) {
+    const last = dir.lastIndexOf("/");
+    const seg = dir.slice(last + 1);
+    dir = seg.includes(".") ? dir.slice(0, last + 1) : dir + "/";
+  }
+  return origin + dir + "dots.json";
 }
 
 async function loadDots() {
