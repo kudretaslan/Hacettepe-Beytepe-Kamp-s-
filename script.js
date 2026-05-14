@@ -25,9 +25,23 @@ function applyCamera() {
 /* ================= DATA ================= */
 let dots = [];
 
+function dotsJsonUrl() {
+  const el = document.querySelector('script[src*="script.js"]');
+  if (el && el.src) {
+    return el.src.replace(/\/script\.js(\?.*)?$/i, "/dots.json");
+  }
+  const path = window.location.pathname;
+  const dir = path.endsWith("/") || !/\.[a-z0-9]+$/i.test(path.split("/").pop() || "")
+    ? path.endsWith("/")
+      ? path
+      : path + "/"
+    : path.replace(/\/[^/]+$/, "/");
+  return window.location.origin + dir + "dots.json";
+}
+
 async function loadDots() {
   try {
-    const res = await fetch("dots.json", { cache: "no-cache" });
+    const res = await fetch(dotsJsonUrl(), { cache: "no-cache" });
     if (!res.ok) throw new Error("dots.json yüklenemedi");
     const data = await res.json();
     const list = Array.isArray(data) ? data : [];
