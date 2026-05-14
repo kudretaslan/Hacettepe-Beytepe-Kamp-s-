@@ -9,20 +9,26 @@ const saveBtn = document.getElementById("saveBtn");
 const closeBtn = document.getElementById("closeBtn");
 
 const overlay = document.getElementById("overlay");
+
 const previewCard = document.getElementById("previewCard");
 
 let activeDotId = null;
 
-/* ================= FIREBASE SHORTCUT ================= */
-const db = window.firebaseDB;
-const { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } = window.firebaseLib;
+/* FIREBASE */
+const db = window.db;
+const { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } = window.fb;
 
-/* ================= LOAD DOTS ================= */
 let dots = [];
 
+/* ================= LOAD ================= */
 async function loadDots() {
   const snap = await getDocs(collection(db, "dots"));
-  dots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  dots = snap.docs.map(d => ({
+    id: d.id,
+    ...d.data()
+  }));
+
   renderAllDots();
 }
 
@@ -102,6 +108,7 @@ function showPopup(dot) {
 
   box.style.display = "block";
   overlay.style.display = "block";
+
   setTimeout(() => box.classList.add("show"), 10);
 
   noteInput.value = dot.note || "";
@@ -109,9 +116,7 @@ function showPopup(dot) {
 
 /* ================= SAVE NOTE ================= */
 saveBtn.onclick = async () => {
-  const ref = doc(db, "dots", activeDotId);
-
-  await updateDoc(ref, {
+  await updateDoc(doc(db, "dots", activeDotId), {
     note: noteInput.value
   });
 
@@ -122,6 +127,7 @@ saveBtn.onclick = async () => {
 /* ================= CLOSE ================= */
 function closeBox() {
   box.classList.remove("show");
+
   setTimeout(() => {
     box.style.display = "none";
     overlay.style.display = "none";
@@ -130,6 +136,3 @@ function closeBox() {
 
 closeBtn.onclick = closeBox;
 overlay.onclick = closeBox;
-
-/* ================= RESIZE ================= */
-window.addEventListener("resize", renderAllDots);
